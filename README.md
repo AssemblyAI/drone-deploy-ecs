@@ -6,6 +6,8 @@
 
 During deployment, the plugin retrieves the active Task Definition for a specified ECS Service, creates a new revision of the Task Definition with an updated image for a specified container, updates the Service to use the new Task Definition, and waits for the deployment to complete.
 
+[ECR Link](https://gallery.ecr.aws/assemblyai/drone-deploy-ecs)
+
 ## Important Notes
 
 This plugin cannot update different containers within the same Task Definition simultaneously. It will only update the image for a single container within a Task Defintion
