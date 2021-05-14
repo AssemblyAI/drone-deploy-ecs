@@ -12,7 +12,7 @@ node:
 
 trigger:
   event:
-  - push
+  - pull_request
 
 volumes:
 - name: docker-socket
