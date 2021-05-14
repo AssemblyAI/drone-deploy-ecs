@@ -41,6 +41,19 @@ steps:
   - go test -v ./cmd/plugin
   - go test -v ./pkg/deploy
 
+- name: vet
+  image: golang:1.16.3
+  pull: if-not-present
+  commands:
+  - go vet -race ./cmd/plugin
+  - go vet -race ./pkg/deploy
+
+- name: build-amd64
+  image: golang:1.16.3
+  pull: if-not-present
+  commands:
+  - bash build/linux_amd64.sh
+
 ---
 kind: pipeline
 name: publish
