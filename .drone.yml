@@ -32,18 +32,12 @@ steps:
   pull: if-not-present
   commands:
   - bash build/linux_amd64.sh
-  when:
-    event:
-    - push
 
 - name: build-amd64-image
   image: public.ecr.aws/assemblyai/docker:latest
   pull: if-not-present
   commands:
   - docker build -t drone-deploy-ecs:${DRONE_COMMIT_SHA} .
-  when:
-    event:
-    - push
   volumes:
   - name: docker-socket
     path: /var/run/docker.sock
@@ -53,9 +47,6 @@ steps:
   pull: if-not-present
   commands:
   - docker rmi --force drone-deploy-ecs:${DRONE_COMMIT_SHA}
-  when:
-    event:
-    - push
   volumes:
   - name: docker-socket
     path: /var/run/docker.sock
