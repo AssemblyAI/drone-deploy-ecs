@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"time"
@@ -10,6 +11,25 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 )
+
+func checkEnvVars() error {
+	requiredVars := []string{
+		"PLUGIN_AWS_REGION",
+		"PLUGIN_SERVICE",
+		"PLUGIN_CLUSTER",
+		"PLUGIN_CONTAINER",
+		"PLUGIN_IMAGE",
+	}
+
+	for _, v := range requiredVars {
+		if os.Getenv(v) == "" {
+			log.Printf("Required environment variable '%s' is missing\n", v)
+			return errors.New("env var not set")
+		}
+	}
+
+	return nil
+}
 
 func newECSClient(region string) *ecs.Client {
 	cfg, err := config.LoadDefaultConfig(
@@ -25,6 +45,11 @@ func newECSClient(region string) *ecs.Client {
 }
 
 func main() {
+	// Ensure all required env vars are present
+	if err := checkEnvVars(); err != nil {
+		os.Exit(1)
+	}
+
 	e := newECSClient(os.Getenv("PLUGIN_AWS_REGION"))
 
 	service := os.Getenv("PLUGIN_SERVICE")
