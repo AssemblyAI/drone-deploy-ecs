@@ -40,7 +40,7 @@ steps:
   image: public.ecr.aws/assemblyai/docker:latest
   pull: if-not-present
   commands:
-  - docker build -t drone-deploy-ecs:${DRONE_COMMIT_SHA}
+  - docker build -t drone-deploy-ecs:${DRONE_COMMIT_SHA} .
   when:
     event:
     - push
