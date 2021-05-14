@@ -38,7 +38,7 @@ kind: pipeline
 name: deploy
 
 steps:
-- name: build
+- name: deploy
   image: public.ecr.aws/assemblyai/drone-deploy-ecs
   settings:
     aws_region: us-east-2
