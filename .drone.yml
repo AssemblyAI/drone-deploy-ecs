@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: ci
+name: pr
 
 platform:
   os: linux
@@ -14,10 +14,24 @@ trigger:
   event:
   - pull_request
 
-volumes:
-- name: docker-socket
-  host:
-    path: /var/run/docker.sock
+---
+kind: pipeline
+name: tests
+
+platform:
+  os: linux
+  arch: amd64
+
+node:
+  os: linux
+  class: standard
+
+trigger:
+  branch:
+    exclude:
+    - main
+  event:
+  - push
 
 steps:
 - name: unit-tests
@@ -27,29 +41,6 @@ steps:
   - go test -v ./cmd/plugin
   - go test -v ./pkg/deploy
 
-- name: build-amd64-binary
-  image: golang:1.16.3
-  pull: if-not-present
-  commands:
-  - bash build/linux_amd64.sh
-
-- name: build-amd64-image
-  image: public.ecr.aws/assemblyai/docker:latest
-  pull: if-not-present
-  commands:
-  - docker build -t drone-deploy-ecs:${DRONE_COMMIT_SHA} .
-  volumes:
-  - name: docker-socket
-    path: /var/run/docker.sock
-  
-- name: cleanup
-  image: public.ecr.aws/assemblyai/docker:latest
-  pull: if-not-present
-  commands:
-  - docker rmi --force drone-deploy-ecs:${DRONE_COMMIT_SHA}
-  volumes:
-  - name: docker-socket
-    path: /var/run/docker.sock
 ---
 kind: pipeline
 name: publish
