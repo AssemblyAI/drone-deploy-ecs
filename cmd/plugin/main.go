@@ -123,7 +123,7 @@ func main() {
 	} else {
 		convertResult, err := strconv.Atoi(os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS"))
 		if err != nil {
-			log.Printf("Error converting '%s' to int. Default to 60 checks, which is 10 minutes\n", os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS"))
+			log.Printf("Error converting '%s' to int. Defaulting to 60 checks, which is 10 minutes\n", os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS"))
 			maxDeployChecks = defaultMaxChecksUntilFailed
 		} else {
 			maxDeployChecks = convertResult
