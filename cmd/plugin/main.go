@@ -5,11 +5,17 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/assemblyai/drone-deploy-ecs/pkg/deploy"
+	"github.com/assemblyai/drone-deploy-ecs/pkg/types"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
+)
+
+const (
+	defaultMaxChecksUntilFailed = 60 // 10 second between checks + 60 checks = 600 seconds = 10 minutes
 )
 
 func checkEnvVars() error {
@@ -44,6 +50,61 @@ func newECSClient(region string) *ecs.Client {
 	return ecs.NewFromConfig(cfg)
 }
 
+// Return values -> success (bool), error
+func release(e types.ECSClient, service string, cluster string, maxDeployChecks int, taskDefinitionARN string) (bool, error) {
+	var err error
+
+	deployCounter := 0
+	deployFinished := false
+	deployFailed := false
+
+	deploymentID, err := deploy.UpdateServiceTaskDefinitionVersion(context.TODO(), e, service, cluster, taskDefinitionARN)
+
+	if err != nil {
+		log.Println("Error updating task definition for service", err.Error())
+		return true, errors.New("deploy failed")
+	}
+
+	log.Println("Started deployment with ID", deploymentID)
+
+	for !deployFinished {
+		// Ensure that we haven't hit this limit
+		// We want to rollback quickly
+		if deployCounter > maxDeployChecks {
+			log.Println("Reached max check limit. Will attempt rollback")
+			deployFinished = true
+			deployFailed = true
+			break
+		}
+
+		log.Println("Waiting for deployment to complete. Check number:", deployCounter)
+		time.Sleep(10 * time.Second)
+		deployCounter++
+
+		deployFinished, err = deploy.CheckDeploymentStatus(
+			context.TODO(),
+			e,
+			service,
+			cluster,
+			deploymentID,
+		)
+
+		if err != nil {
+			log.Println("Deployment failed: ", err.Error())
+			deployFinished = true
+			deployFailed = true
+			break
+		}
+
+	}
+
+	if deployFailed {
+		return false, errors.New("deploy failed")
+	}
+
+	return true, nil
+}
+
 func main() {
 	// Ensure all required env vars are present
 	if err := checkEnvVars(); err != nil {
@@ -52,10 +113,25 @@ func main() {
 
 	e := newECSClient(os.Getenv("PLUGIN_AWS_REGION"))
 
+	var maxDeployChecks int
+
 	service := os.Getenv("PLUGIN_SERVICE")
 	cluster := os.Getenv("PLUGIN_CLUSTER")
 	container := os.Getenv("PLUGIN_CONTAINER")
 	image := os.Getenv("PLUGIN_IMAGE")
+
+	if os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS") == "" {
+		log.Println("PLUGIN_MAX_DEPLOY_CHECKS environment variable not set. Defaulting to", defaultMaxChecksUntilFailed)
+		maxDeployChecks = defaultMaxChecksUntilFailed
+	} else {
+		convertResult, err := strconv.Atoi(os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS"))
+		if err != nil {
+			log.Printf("Error converting '%s' to int. Defaulting to 60 checks, which is 10 minutes\n", os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS"))
+			maxDeployChecks = defaultMaxChecksUntilFailed
+		} else {
+			maxDeployChecks = convertResult
+		}
+	}
 
 	td, err := deploy.GetServiceRunningTaskDefinition(context.TODO(), e, service, cluster)
 
@@ -80,34 +156,19 @@ func main() {
 
 	log.Println("Created new task definition revision", newTD.Revision)
 
-	deploymentID, err := deploy.UpdateServiceTaskDefinitionVersion(context.TODO(), e, service, cluster, *newTD.TaskDefinitionArn)
+	deploymentOK, _ := release(e, service, cluster, maxDeployChecks, *newTD.TaskDefinitionArn)
 
-	if err != nil {
-		panic(err)
-	}
+	if !deploymentOK {
+		log.Println("Rolling back failed deployment")
+		rollbackOK, _ := release(e, service, cluster, maxDeployChecks, *currTD.TaskDefinitionArn)
 
-	deployFinished := false
-
-	log.Println("Deployment begun. Deployment ID", deploymentID)
-
-	for !deployFinished {
-		deployFinished, err = deploy.CheckDeploymentStatus(
-			context.TODO(),
-			e,
-			service,
-			cluster,
-			deploymentID,
-		)
-
-		if err != nil {
-			log.Println("Deployment failed: ", err.Error())
-			os.Exit(1)
+		if !rollbackOK {
+			log.Println("Error rolling back")
 		}
-
-		log.Println("Waiting for deployment to complete")
-		time.Sleep(5 * time.Second)
+		// Exit 1 so the build fails
+		os.Exit(1)
 	}
 
-	log.Println("Deployment complete. Successfully updated service")
+	log.Println("Deployment succeeded")
 
 }

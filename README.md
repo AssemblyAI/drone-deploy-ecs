@@ -14,7 +14,7 @@ This plugin cannot update different containers within the same Task Definition s
 
 The ECS Service must use the `ECS` deployment controller.
 
-This plugin will not rollback for you. For rollbacks, use a [deployment circuit breaker](https://aws.amazon.com/blogs/containers/announcing-amazon-ecs-deployment-circuit-breaker/).
+~~This plugin will not rollback for you. For rollbacks, use a [deployment circuit breaker](https://aws.amazon.com/blogs/containers/announcing-amazon-ecs-deployment-circuit-breaker/).~~
 
 ## Requirements
 
@@ -50,4 +50,5 @@ steps:
     container: nginx
     # The image to deploy
     image: myorg/nginx-${DRONE_COMMIT_SHA}
+    max_deploy_checks: 10
 ```
