@@ -5,11 +5,16 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/assemblyai/drone-deploy-ecs/pkg/deploy"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
+)
+
+const (
+	defaultMaxChecksUntilFailed = 60 // 10 second between checks + 60 checks = 600 seconds = 10 minutes
 )
 
 func checkEnvVars() error {
@@ -52,10 +57,24 @@ func main() {
 
 	e := newECSClient(os.Getenv("PLUGIN_AWS_REGION"))
 
+	var maxDeployChecks int
+
 	service := os.Getenv("PLUGIN_SERVICE")
 	cluster := os.Getenv("PLUGIN_CLUSTER")
 	container := os.Getenv("PLUGIN_CONTAINER")
 	image := os.Getenv("PLUGIN_IMAGE")
+
+	if os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS") == "" {
+		maxDeployChecks = defaultMaxChecksUntilFailed
+	} else {
+		convertResult, err := strconv.Atoi(os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS"))
+		if err != nil {
+			log.Printf("Error converting '%s' to int. Default to 60 checks, which is 10 minutes\n", os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS"))
+			maxDeployChecks = defaultMaxChecksUntilFailed
+		} else {
+			maxDeployChecks = convertResult
+		}
+	}
 
 	td, err := deploy.GetServiceRunningTaskDefinition(context.TODO(), e, service, cluster)
 
@@ -87,6 +106,7 @@ func main() {
 	}
 
 	deployFinished := false
+	deployCounter := 0
 
 	log.Println("Deployment begun. Deployment ID", deploymentID)
 
@@ -104,8 +124,16 @@ func main() {
 			os.Exit(1)
 		}
 
+		// TODO handle this more gracefully
+		if deployCounter > maxDeployChecks {
+			log.Println("Reached max check limit. Rolling back.")
+			deploy.UpdateServiceTaskDefinitionVersion(context.TODO(), e, service, cluster, *currTD.TaskDefinitionArn)
+			os.Exit(1)
+		}
+
 		log.Println("Waiting for deployment to complete")
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
+		deployCounter++
 	}
 
 	log.Println("Deployment complete. Successfully updated service")
