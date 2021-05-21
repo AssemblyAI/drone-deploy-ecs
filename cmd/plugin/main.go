@@ -74,7 +74,12 @@ func release(e types.ECSClient, service string, cluster string, maxDeployChecks 
 			log.Println("Reached max check limit. Will attempt rollback")
 			deployFinished = true
 			deployFailed = true
+			break
 		}
+
+		log.Println("Waiting for deployment to complete. Check number:", deployCounter)
+		time.Sleep(10 * time.Second)
+		deployCounter++
 
 		deployFinished, err = deploy.CheckDeploymentStatus(
 			context.TODO(),
@@ -88,11 +93,9 @@ func release(e types.ECSClient, service string, cluster string, maxDeployChecks 
 			log.Println("Deployment failed: ", err.Error())
 			deployFinished = true
 			deployFailed = true
+			break
 		}
 
-		log.Println("Waiting for deployment to complete. Check number:", deployCounter)
-		time.Sleep(10 * time.Second)
-		deployCounter++
 	}
 
 	if deployFailed {
@@ -153,7 +156,7 @@ func main() {
 
 	log.Println("Created new task definition revision", newTD.Revision)
 
-	deploymentOK, err := release(e, service, cluster, maxDeployChecks, *newTD.TaskDefinitionArn)
+	deploymentOK, _ := release(e, service, cluster, maxDeployChecks, *newTD.TaskDefinitionArn)
 
 	if !deploymentOK {
 		log.Println("Rolling back failed deployment")
@@ -162,7 +165,7 @@ func main() {
 		if !rollbackOK {
 			log.Println("Error rolling back")
 		}
-		// Mark build as failed because the initial deployment failed
+		// Exit 1 so the build fails
 		os.Exit(1)
 	}
 

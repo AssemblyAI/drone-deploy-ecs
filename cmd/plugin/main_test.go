@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/assemblyai/drone-deploy-ecs/pkg/deploy"
+	"github.com/assemblyai/drone-deploy-ecs/pkg/types"
 	"gotest.tools/assert"
 )
 
@@ -30,4 +32,81 @@ func TestCheckEnvVarsMissing(t *testing.T) {
 
 	assert.Error(t, err, "env var not set")
 
+}
+
+func Test_release(t *testing.T) {
+	type args struct {
+		e                 types.ECSClient
+		service           string
+		cluster           string
+		maxDeployChecks   int
+		taskDefinitionARN string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test-failure",
+			args: args{
+				// TODO create a mock pkg
+				e: deploy.MockECSClient{
+					DeploymentState: "FAILED",
+					TestingT:        t,
+				},
+				service:           "test-service",
+				cluster:           "test-cluster",
+				maxDeployChecks:   3,
+				taskDefinitionARN: "arn:aws:ecs:us-west-2:123456789012:task-definition/amazon-ecs-sample:1",
+			},
+			want:    false,
+			wantErr: true,
+		},
+		{
+			name: "test-success",
+			args: args{
+				// TODO create a mock pkg
+				e: deploy.MockECSClient{
+					DeploymentState: "COMPLETED",
+					TestingT:        t,
+				},
+				service:           "test-service",
+				cluster:           "test-cluster",
+				maxDeployChecks:   3,
+				taskDefinitionARN: "arn:aws:ecs:us-west-2:123456789012:task-definition/amazon-ecs-sample:1",
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "test-timeout",
+			args: args{
+				// TODO create a mock pkg
+				e: deploy.MockECSClient{
+					DeploymentState: "IN_PROGRESS",
+					TestingT:        t,
+				},
+				service:           "test-service",
+				cluster:           "test-cluster",
+				maxDeployChecks:   1,
+				taskDefinitionARN: "arn:aws:ecs:us-west-2:123456789012:task-definition/amazon-ecs-sample:1",
+			},
+			want:    false,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := release(tt.args.e, tt.args.service, tt.args.cluster, tt.args.maxDeployChecks, tt.args.taskDefinitionARN)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("release() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("release() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
