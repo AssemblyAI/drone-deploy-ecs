@@ -88,7 +88,7 @@ func main() {
 
 	deployFinished := false
 
-	log.Println("Deployment begun")
+	log.Println("Deployment begun. Deployment ID", deploymentID)
 
 	for !deployFinished {
 		deployFinished, err = deploy.CheckDeploymentStatus(
