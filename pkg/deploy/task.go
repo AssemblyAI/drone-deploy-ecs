@@ -24,12 +24,12 @@ func RetrieveTaskDefinition(ctx context.Context, c types.ECSClient, taskDefiniti
 		&i,
 	)
 
-	td = *out.TaskDefinition
-
 	if err != nil {
 		log.Println("Error describing task definition: ", err.Error())
 		return td, err
 	}
+
+	td = *out.TaskDefinition
 
 	return td, nil
 }
