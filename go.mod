@@ -4,8 +4,7 @@ go 1.16
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.6.0
-	github.com/aws/aws-sdk-go-v2/config v1.2.0
-	github.com/aws/aws-sdk-go-v2/internal/ini v1.0.0 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.3.0
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.4.1
 	github.com/pkg/errors v0.9.1 // indirect
 	gotest.tools v2.2.0+incompatible
