@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/assemblyai/drone-deploy-ecs/pkg/deploy"
+	"github.com/assemblyai/drone-deploy-ecs/pkg/types"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 )
@@ -47,6 +48,58 @@ func newECSClient(region string) *ecs.Client {
 	}
 
 	return ecs.NewFromConfig(cfg)
+}
+
+// Return values -> success (bool), error
+func release(e types.ECSClient, service string, cluster string, maxDeployChecks int, taskDefinitionARN string) (bool, error) {
+	var err error
+
+	deployCounter := 0
+	deployFinished := false
+	deployFailed := false
+
+	deploymentID, err := deploy.UpdateServiceTaskDefinitionVersion(context.TODO(), e, service, cluster, taskDefinitionARN)
+
+	if err != nil {
+		log.Println("Error updating task definition for service", err.Error())
+		return true, errors.New("deploy failed")
+	}
+
+	log.Println("Started deployment with ID", deploymentID)
+
+	for !deployFinished {
+		// Ensure that we haven't hit this limit
+		// We want to rollback quickly
+		if deployCounter > maxDeployChecks {
+			log.Println("Reached max check limit. Will attempt rollback")
+			deployFinished = true
+			deployFailed = true
+		}
+
+		deployFinished, err = deploy.CheckDeploymentStatus(
+			context.TODO(),
+			e,
+			service,
+			cluster,
+			deploymentID,
+		)
+
+		if err != nil {
+			log.Println("Deployment failed: ", err.Error())
+			deployFinished = true
+			deployFailed = true
+		}
+
+		log.Println("Waiting for deployment to complete. Check number:", deployCounter)
+		time.Sleep(10 * time.Second)
+		deployCounter++
+	}
+
+	if deployFailed {
+		return false, errors.New("deploy failed")
+	}
+
+	return true, nil
 }
 
 func main() {
@@ -100,43 +153,19 @@ func main() {
 
 	log.Println("Created new task definition revision", newTD.Revision)
 
-	deploymentID, err := deploy.UpdateServiceTaskDefinitionVersion(context.TODO(), e, service, cluster, *newTD.TaskDefinitionArn)
+	deploymentOK, err := release(e, service, cluster, maxDeployChecks, *newTD.TaskDefinitionArn)
 
-	if err != nil {
-		panic(err)
+	if !deploymentOK {
+		log.Println("Rolling back failed deployment")
+		rollbackOK, _ := release(e, service, cluster, maxDeployChecks, *currTD.TaskDefinitionArn)
+
+		if !rollbackOK {
+			log.Println("Error rolling back")
+		}
+		// Mark build as failed because the initial deployment failed
+		os.Exit(1)
 	}
 
-	deployFinished := false
-	deployCounter := 0
-
-	log.Println("Deployment begun. Deployment ID", deploymentID)
-
-	for !deployFinished {
-		deployFinished, err = deploy.CheckDeploymentStatus(
-			context.TODO(),
-			e,
-			service,
-			cluster,
-			deploymentID,
-		)
-
-		if err != nil {
-			log.Println("Deployment failed: ", err.Error())
-			os.Exit(1)
-		}
-
-		// TODO handle this more gracefully
-		if deployCounter > maxDeployChecks {
-			log.Println("Reached max check limit. Rolling back.")
-			deploy.UpdateServiceTaskDefinitionVersion(context.TODO(), e, service, cluster, *currTD.TaskDefinitionArn)
-			os.Exit(1)
-		}
-
-		log.Println("Waiting for deployment to complete")
-		time.Sleep(10 * time.Second)
-		deployCounter++
-	}
-
-	log.Println("Deployment complete. Successfully updated service")
+	log.Println("Deployment succeeded")
 
 }
