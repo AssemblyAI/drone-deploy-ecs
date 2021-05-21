@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
@@ -24,7 +25,7 @@ type MockECSClient struct {
 func (c MockECSClient) DescribeTaskDefinition(ctx context.Context, params *ecs.DescribeTaskDefinitionInput, optFns ...func(*ecs.Options)) (*ecs.DescribeTaskDefinitionOutput, error) {
 
 	if c.WantError {
-		return nil, errors.New("error describing task definition")
+		return nil, errors.New("error")
 	}
 	td := ecstypes.TaskDefinition{
 		ContainerDefinitions: []ecstypes.ContainerDefinition{
@@ -106,8 +107,62 @@ func (c MockECSClient) DescribeServices(ctx context.Context, params *ecs.Describ
 }
 
 func (c MockECSClient) UpdateService(ctx context.Context, params *ecs.UpdateServiceInput, optFns ...func(*ecs.Options)) (*ecs.UpdateServiceOutput, error) {
+
+	if c.WantError {
+		return nil, errors.New("error")
+	}
+
 	out := ecs.UpdateServiceOutput{
-		Service: &ecstypes.Service{},
+		Service: &ecstypes.Service{
+			CapacityProviderStrategy: []ecstypes.CapacityProviderStrategyItem{},
+			ClusterArn:               new(string),
+			CreatedAt:                &time.Time{},
+			CreatedBy:                new(string),
+			DeploymentConfiguration:  &ecstypes.DeploymentConfiguration{},
+			DeploymentController:     &ecstypes.DeploymentController{},
+			Deployments: []ecstypes.Deployment{
+				{
+					CapacityProviderStrategy: []ecstypes.CapacityProviderStrategyItem{},
+					CreatedAt:                &time.Time{},
+					DesiredCount:             0,
+					FailedTasks:              0,
+					Id:                       aws.String("test-deployment"),
+					LaunchType:               "",
+					NetworkConfiguration:     &ecstypes.NetworkConfiguration{},
+					PendingCount:             0,
+					PlatformVersion:          new(string),
+					RolloutState:             "",
+					RolloutStateReason:       new(string),
+					RunningCount:             0,
+					Status:                   new(string),
+					TaskDefinition:           new(string),
+					UpdatedAt:                &time.Time{},
+				},
+			},
+			DesiredCount:                  0,
+			EnableECSManagedTags:          false,
+			EnableExecuteCommand:          false,
+			Events:                        []ecstypes.ServiceEvent{},
+			HealthCheckGracePeriodSeconds: new(int32),
+			LaunchType:                    "",
+			LoadBalancers:                 []ecstypes.LoadBalancer{},
+			NetworkConfiguration:          &ecstypes.NetworkConfiguration{},
+			PendingCount:                  0,
+			PlacementConstraints:          []ecstypes.PlacementConstraint{},
+			PlacementStrategy:             []ecstypes.PlacementStrategy{},
+			PlatformVersion:               new(string),
+			PropagateTags:                 "",
+			RoleArn:                       new(string),
+			RunningCount:                  0,
+			SchedulingStrategy:            "",
+			ServiceArn:                    new(string),
+			ServiceName:                   new(string),
+			ServiceRegistries:             []ecstypes.ServiceRegistry{},
+			Status:                        new(string),
+			Tags:                          []ecstypes.Tag{},
+			TaskDefinition:                new(string),
+			TaskSets:                      []ecstypes.TaskSet{},
+		},
 	}
 
 	return &out, nil

@@ -98,3 +98,56 @@ func TestCheckDeploymentStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateServiceTaskDefinitionVersion(t *testing.T) {
+	type args struct {
+		ctx              context.Context
+		c                types.ECSClient
+		service          string
+		cluster          string
+		taskDefinitonARN string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				ctx:              context.Background(),
+				c:                MockECSClient{TestingT: t, WantError: false},
+				service:          "test-service",
+				cluster:          "test-cluster",
+				taskDefinitonARN: testTDARN,
+			},
+			want:    "test-deployment",
+			wantErr: false,
+		},
+		{
+			name: "failure",
+			args: args{
+				ctx:              context.Background(),
+				c:                MockECSClient{TestingT: t, WantError: true},
+				service:          "test-service",
+				cluster:          "test-cluster",
+				taskDefinitonARN: testTDARN,
+			},
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := UpdateServiceTaskDefinitionVersion(tt.args.ctx, tt.args.c, tt.args.service, tt.args.cluster, tt.args.taskDefinitonARN)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UpdateServiceTaskDefinitionVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("UpdateServiceTaskDefinitionVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
