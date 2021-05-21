@@ -74,7 +74,7 @@ func CheckDeploymentStatus(ctx context.Context, c types.ECSClient, service strin
 		return true, nil
 	} else {
 		// The only other status is FAILED
-		return false, errors.New("deployment failed")
+		return true, errors.New("deployment failed")
 	}
 
 }

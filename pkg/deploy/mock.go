@@ -42,7 +42,29 @@ func (c MockECSClient) DescribeTaskDefinition(ctx context.Context, params *ecs.D
 }
 
 func (c MockECSClient) RegisterTaskDefinition(ctx context.Context, params *ecs.RegisterTaskDefinitionInput, optFns ...func(*ecs.Options)) (*ecs.RegisterTaskDefinitionOutput, error) {
-	out := ecs.RegisterTaskDefinitionOutput{}
+	out := ecs.RegisterTaskDefinitionOutput{
+		Tags: []ecstypes.Tag{},
+		TaskDefinition: &ecstypes.TaskDefinition{
+			Compatibilities:         []ecstypes.Compatibility{},
+			ContainerDefinitions:    params.ContainerDefinitions,
+			Cpu:                     params.Cpu,
+			EphemeralStorage:        params.EphemeralStorage,
+			ExecutionRoleArn:        params.ExecutionRoleArn,
+			Family:                  params.Family,
+			InferenceAccelerators:   params.InferenceAccelerators,
+			IpcMode:                 params.IpcMode,
+			Memory:                  params.Memory,
+			NetworkMode:             params.NetworkMode,
+			PidMode:                 params.PidMode,
+			PlacementConstraints:    params.PlacementConstraints,
+			ProxyConfiguration:      params.ProxyConfiguration,
+			RequiresCompatibilities: params.RequiresCompatibilities,
+			Status:                  ecstypes.TaskDefinitionStatus(c.DeploymentState),
+			TaskDefinitionArn:       aws.String(testTDARN),
+			TaskRoleArn:             params.TaskRoleArn,
+			Volumes:                 params.Volumes,
+		},
+	}
 
 	return &out, nil
 }
@@ -79,7 +101,9 @@ func (c MockECSClient) DescribeServices(ctx context.Context, params *ecs.Describ
 }
 
 func (c MockECSClient) UpdateService(ctx context.Context, params *ecs.UpdateServiceInput, optFns ...func(*ecs.Options)) (*ecs.UpdateServiceOutput, error) {
-	out := ecs.UpdateServiceOutput{}
+	out := ecs.UpdateServiceOutput{
+		Service: &ecstypes.Service{},
+	}
 
 	return &out, nil
 }
