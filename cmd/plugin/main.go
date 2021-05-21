@@ -65,6 +65,7 @@ func main() {
 	image := os.Getenv("PLUGIN_IMAGE")
 
 	if os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS") == "" {
+		log.Println("PLUGIN_MAX_DEPLOY_CHECKS environment variable not set. Defaulting to", defaultMaxChecksUntilFailed)
 		maxDeployChecks = defaultMaxChecksUntilFailed
 	} else {
 		convertResult, err := strconv.Atoi(os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS"))
