@@ -202,3 +202,61 @@ func TestCreateNewTaskDefinitionRevision(t *testing.T) {
 		})
 	}
 }
+
+func TestRetrieveTaskDefinition(t *testing.T) {
+	type args struct {
+		ctx               context.Context
+		c                 types.ECSClient
+		taskDefinitionARN string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    ecstypes.TaskDefinition
+		wantErr bool
+	}{
+		{
+			name: "retrieve-success",
+			args: args{
+				ctx:               context.Background(),
+				c:                 MockECSClient{TestingT: t},
+				taskDefinitionARN: testTDARN,
+			},
+			want: ecstypes.TaskDefinition{
+				ContainerDefinitions: []ecstypes.ContainerDefinition{
+					{
+						Name:  aws.String("app"),
+						Image: aws.String("some/image:1.0"),
+					},
+					{
+						Name:  aws.String("sidecar"),
+						Image: aws.String("datadog/agent:7"),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "retrieve-failure",
+			args: args{
+				ctx:               context.Background(),
+				c:                 MockECSClient{TestingT: t, WantError: true},
+				taskDefinitionARN: testTDARN,
+			},
+			want:    ecstypes.TaskDefinition{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := RetrieveTaskDefinition(tt.args.ctx, tt.args.c, tt.args.taskDefinitionARN)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RetrieveTaskDefinition() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RetrieveTaskDefinition() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -2,6 +2,7 @@ package deploy
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -17,10 +18,14 @@ const (
 type MockECSClient struct {
 	DeploymentState ecstypes.DeploymentRolloutState
 	TestingT        *testing.T
+	WantError       bool
 }
 
 func (c MockECSClient) DescribeTaskDefinition(ctx context.Context, params *ecs.DescribeTaskDefinitionInput, optFns ...func(*ecs.Options)) (*ecs.DescribeTaskDefinitionOutput, error) {
 
+	if c.WantError {
+		return nil, errors.New("error describing task definition")
+	}
 	td := ecstypes.TaskDefinition{
 		ContainerDefinitions: []ecstypes.ContainerDefinition{
 			{
