@@ -3,6 +3,7 @@ package deploy
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/assemblyai/drone-deploy-ecs/pkg/types"
@@ -29,6 +30,31 @@ func GetServiceRunningTaskDefinition(ctx context.Context, c types.ECSClient, ser
 	return *out.Services[0].TaskDefinition, nil
 }
 
+func GetServiceDesiredCount(ctx context.Context, c types.ECSClient, service string, cluster string) (int32, error) {
+	i := ecs.DescribeServicesInput{
+		Services: []string{service},
+		Cluster:  aws.String(cluster),
+	}
+
+	out, err := c.DescribeServices(
+		ctx,
+		&i,
+	)
+
+	if err != nil {
+		log.Println("Error describing service: ", err.Error())
+		return 0, err
+	}
+
+	return out.Services[0].DesiredCount, nil
+}
+
+func GetServiceMaxCount(c types.AppAutoscalingClient, cluster string, service string) {
+	resourceID := fmt.Sprintf("service/%s/%s", cluster, service)
+	// https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/applicationautoscaling#Client.DescribeScalableTargets
+
+}
+
 func UpdateServiceTaskDefinitionVersion(ctx context.Context, c types.ECSClient, service string, cluster string, taskDefinitonARN string) (string, error) {
 
 	i := ecs.UpdateServiceInput{
@@ -52,6 +78,7 @@ func UpdateServiceTaskDefinitionVersion(ctx context.Context, c types.ECSClient, 
 }
 
 // CheckDeploymentStatus returns true if a deployment has finished (either success or failure) and false if the deployment is in progress
+// TODO remove deploymentID
 func CheckDeploymentStatus(ctx context.Context, c types.ECSClient, service string, cluster string, deploymentID string) (bool, error) {
 	i := ecs.DescribeServicesInput{
 		Services: []string{service},
@@ -76,5 +103,40 @@ func CheckDeploymentStatus(ctx context.Context, c types.ECSClient, service strin
 		// The only other status is FAILED
 		return true, errors.New("deployment failed")
 	}
+
+}
+
+func GreenScaleUpFinished(ctx context.Context, c types.ECSClient, service string, cluster string) (bool, error) {
+	i := ecs.DescribeServicesInput{
+		Services: []string{service},
+		Cluster:  aws.String(cluster),
+	}
+
+	out, err := c.DescribeServices(
+		ctx,
+		&i,
+	)
+
+	if err != nil {
+		log.Println("Error describing service: ", err.Error())
+		return true, err
+	}
+
+	if out.Services[0].RunningCount != out.Services[0].DesiredCount {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func ScaleDown(c types.ECSClient, desiredCount int32, minCount int32, maxCount int32) {
+	// Set max, desired, min to 0
+}
+
+func ScaleUp(c types.ECSClient, count int32, maxCount int32) {
+	// Set max count to maxCount
+}
+
+func GetContainerStatus() {
 
 }

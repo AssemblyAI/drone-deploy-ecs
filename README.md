@@ -41,6 +41,8 @@ steps:
 - name: deploy
   image: public.ecr.aws/assemblyai/drone-deploy-ecs
   settings:
+    # Can either be rolling or blue-green
+    mode: rolling
     aws_region: us-east-2
     # The name of the ECS service
     service: webapp
@@ -52,3 +54,9 @@ steps:
     image: myorg/nginx-${DRONE_COMMIT_SHA}
     max_deploy_checks: 10
 ```
+
+## Blue / Green
+
+The ECS service must have an associated Application Autoscaling Target
+
+The deployment type must be ECS
