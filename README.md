@@ -108,7 +108,6 @@ steps:
 
 ## TODO
 
-- Fix bug setting max count to 0 too early when app autoscaling is in use
 - Code cleanup
 - Better `settings` documentation
 - Tests
