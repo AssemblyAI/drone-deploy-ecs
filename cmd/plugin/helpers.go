@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 )
 
@@ -72,4 +73,17 @@ func newECSClient(region string) *ecs.Client {
 	}
 
 	return ecs.NewFromConfig(cfg)
+}
+
+func newAppAutoscalingTarget(region string) *applicationautoscaling.Client {
+	cfg, err := config.LoadDefaultConfig(
+		context.TODO(),
+		config.WithRegion(region),
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to load SDK configuration, %v", err)
+	}
+
+	return applicationautoscaling.NewFromConfig(cfg)
 }

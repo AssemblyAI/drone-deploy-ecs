@@ -3,7 +3,6 @@ package deploy
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 
 	"github.com/assemblyai/drone-deploy-ecs/pkg/types"
@@ -47,12 +46,6 @@ func GetServiceDesiredCount(ctx context.Context, c types.ECSClient, service stri
 	}
 
 	return out.Services[0].DesiredCount, nil
-}
-
-func GetServiceMaxCount(c types.AppAutoscalingClient, cluster string, service string) {
-	resourceID := fmt.Sprintf("service/%s/%s", cluster, service)
-	// https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/applicationautoscaling#Client.DescribeScalableTargets
-
 }
 
 func UpdateServiceTaskDefinitionVersion(ctx context.Context, c types.ECSClient, service string, cluster string, taskDefinitonARN string) (string, error) {
@@ -127,16 +120,4 @@ func GreenScaleUpFinished(ctx context.Context, c types.ECSClient, service string
 	}
 
 	return true, nil
-}
-
-func ScaleDown(c types.ECSClient, desiredCount int32, minCount int32, maxCount int32) {
-	// Set max, desired, min to 0
-}
-
-func ScaleUp(c types.ECSClient, count int32, maxCount int32) {
-	// Set max count to maxCount
-}
-
-func GetContainerStatus() {
-
 }
