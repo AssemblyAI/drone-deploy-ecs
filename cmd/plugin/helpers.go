@@ -48,8 +48,12 @@ func parseRollingVars() error {
 
 func checkBlueGreenVars() error {
 	requiredVars := []string{
-		"PLUGIN_BLUE_SERVICE_NAME",
-		"PLUGIN_GREEN_SERVICE_NAME",
+		"PLUGIN_BLUE_SERVICE",
+		"PLUGIN_GREEN_SERVICE",
+		"PLUGIN_SCALE_DOWN_PERCENT",
+		"PLUGIN_SCALE_DOWN_INTERVAL",
+		"PLUGIN_SCALE_DOWN_WAIT_PERIOD",
+		"PLUGIN_CHECKS_TO_PASS",
 	}
 
 	for _, v := range requiredVars {
@@ -75,7 +79,7 @@ func newECSClient(region string) *ecs.Client {
 	return ecs.NewFromConfig(cfg)
 }
 
-func newAppAutoscalingTarget(region string) *applicationautoscaling.Client {
+func newAppAutoscalingClient(region string) *applicationautoscaling.Client {
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
 		config.WithRegion(region),

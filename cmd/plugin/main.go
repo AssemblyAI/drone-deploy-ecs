@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"strconv"
+
+	"github.com/assemblyai/drone-deploy-ecs/pkg/deploy"
 )
 
 const (
@@ -15,8 +17,6 @@ func main() {
 	if err := checkEnvVars(); err != nil {
 		os.Exit(1)
 	}
-
-	e := newECSClient(os.Getenv("PLUGIN_AWS_REGION"))
 
 	var maxDeployChecks int
 
@@ -33,14 +33,23 @@ func main() {
 		}
 	}
 
-	cluster := os.Getenv("PLUGIN_CLUSTER")
-	container := os.Getenv("PLUGIN_CONTAINER")
-	image := os.Getenv("PLUGIN_IMAGE")
+	dc := deploy.DeployConfig{
+		ECS:            newECSClient(os.Getenv("PLUGIN_AWS_REGION")),
+		AppAutoscaling: newAppAutoscalingClient(os.Getenv("PLUGIN_AWS_REGION")),
+		Cluster:        os.Getenv("PLUGIN_CLUSTER"),
+		Container:      os.Getenv("PLUGIN_CONTAINER"),
+		Image:          os.Getenv("PLUGIN_IMAGE"),
+	}
 
 	if os.Getenv("PLUGIN_MODE") == "blue-green" {
-
+		if err := checkBlueGreenVars(); err != nil {
+			os.Exit(1)
+		}
+		if err := blueGreen(dc, maxDeployChecks); err != nil {
+			os.Exit(1)
+		}
 	} else {
-		if err := rolling(e, cluster, container, image, maxDeployChecks); err != nil {
+		if err := rolling(dc.ECS, dc.Cluster, dc.Container, dc.Image, maxDeployChecks); err != nil {
 			os.Exit(1)
 		}
 	}

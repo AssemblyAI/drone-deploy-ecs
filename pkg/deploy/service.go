@@ -99,13 +99,28 @@ func CheckDeploymentStatus(ctx context.Context, c types.ECSClient, service strin
 
 }
 
-func GreenScaleUpFinished(ctx context.Context, c types.ECSClient, service string, cluster string) (bool, error) {
-	i := ecs.DescribeServicesInput{
-		Services: []string{service},
-		Cluster:  aws.String(cluster),
+func setECSServiceDesiredCount(c types.ECSClient, service string, cluster string, desiredCount int32) error {
+
+	p := ecs.UpdateServiceInput{
+		Service:      &service,
+		DesiredCount: &desiredCount,
+		Cluster:      &cluster,
 	}
 
-	out, err := c.DescribeServices(
+	// TODO use provided context
+	_, err := c.UpdateService(context.Background(), &p)
+
+	return err
+}
+
+// TODO update mock client so we can test this
+func (c DeployConfig) GreenScaleUpFinished(ctx context.Context, service string) (bool, error) {
+	i := ecs.DescribeServicesInput{
+		Services: []string{service},
+		Cluster:  aws.String(c.Cluster),
+	}
+
+	out, err := c.ECS.DescribeServices(
 		ctx,
 		&i,
 	)

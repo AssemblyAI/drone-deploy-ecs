@@ -151,3 +151,82 @@ func TestUpdateServiceTaskDefinitionVersion(t *testing.T) {
 		})
 	}
 }
+
+func Test_setECSServiceDesiredCount(t *testing.T) {
+	type args struct {
+		c            types.ECSClient
+		service      string
+		cluster      string
+		desiredCount int32
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "success",
+			args: args{
+				c:       MockECSClient{TestingT: t, WantError: false},
+				service: "test-service",
+				cluster: "test-cluster",
+			},
+			wantErr: false,
+		},
+		{
+			name: "failure",
+			args: args{
+				c:       MockECSClient{TestingT: t, WantError: true},
+				service: "test-service",
+				cluster: "test-cluster",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := setECSServiceDesiredCount(tt.args.c, tt.args.service, tt.args.cluster, tt.args.desiredCount); (err != nil) != tt.wantErr {
+				t.Errorf("setECSServiceDesiredCount() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestGetServiceDesiredCount(t *testing.T) {
+	type args struct {
+		ctx     context.Context
+		c       types.ECSClient
+		service string
+		cluster string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int32
+		wantErr bool
+	}{
+		{
+			name: "desired-count-is-2",
+			args: args{
+				ctx:     context.Background(),
+				c:       MockECSClient{WantError: false, TestingT: t},
+				cluster: "test-cluster",
+				service: "test-service",
+			},
+			want:    2,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetServiceDesiredCount(tt.args.ctx, tt.args.c, tt.args.service, tt.args.cluster)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetServiceDesiredCount() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetServiceDesiredCount() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
