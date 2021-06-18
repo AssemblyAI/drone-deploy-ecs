@@ -29,6 +29,25 @@ func GetServiceRunningTaskDefinition(ctx context.Context, c types.ECSClient, ser
 	return *out.Services[0].TaskDefinition, nil
 }
 
+func GetServiceDesiredCount(ctx context.Context, c types.ECSClient, service string, cluster string) (int32, error) {
+	i := ecs.DescribeServicesInput{
+		Services: []string{service},
+		Cluster:  aws.String(cluster),
+	}
+
+	out, err := c.DescribeServices(
+		ctx,
+		&i,
+	)
+
+	if err != nil {
+		log.Println("Error describing service: ", err.Error())
+		return 0, err
+	}
+
+	return out.Services[0].DesiredCount, nil
+}
+
 func UpdateServiceTaskDefinitionVersion(ctx context.Context, c types.ECSClient, service string, cluster string, taskDefinitonARN string) (string, error) {
 
 	i := ecs.UpdateServiceInput{
@@ -52,6 +71,7 @@ func UpdateServiceTaskDefinitionVersion(ctx context.Context, c types.ECSClient, 
 }
 
 // CheckDeploymentStatus returns true if a deployment has finished (either success or failure) and false if the deployment is in progress
+// TODO remove deploymentID
 func CheckDeploymentStatus(ctx context.Context, c types.ECSClient, service string, cluster string, deploymentID string) (bool, error) {
 	i := ecs.DescribeServicesInput{
 		Services: []string{service},
@@ -77,4 +97,42 @@ func CheckDeploymentStatus(ctx context.Context, c types.ECSClient, service strin
 		return true, errors.New("deployment failed")
 	}
 
+}
+
+func setECSServiceDesiredCount(c types.ECSClient, service string, cluster string, desiredCount int32) error {
+
+	p := ecs.UpdateServiceInput{
+		Service:      &service,
+		DesiredCount: &desiredCount,
+		Cluster:      &cluster,
+	}
+
+	// TODO use provided context
+	_, err := c.UpdateService(context.Background(), &p)
+
+	return err
+}
+
+// TODO update mock client so we can test this
+func (c DeployConfig) GreenScaleUpFinished(ctx context.Context, service string) (bool, error) {
+	i := ecs.DescribeServicesInput{
+		Services: []string{service},
+		Cluster:  aws.String(c.Cluster),
+	}
+
+	out, err := c.ECS.DescribeServices(
+		ctx,
+		&i,
+	)
+
+	if err != nil {
+		log.Println("Error describing service: ", err.Error())
+		return true, err
+	}
+
+	if out.Services[0].RunningCount != out.Services[0].DesiredCount {
+		return false, nil
+	}
+
+	return true, nil
 }

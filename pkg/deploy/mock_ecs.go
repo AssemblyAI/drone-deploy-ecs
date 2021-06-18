@@ -91,10 +91,11 @@ func (c MockECSClient) DescribeServices(ctx context.Context, params *ecs.Describ
 
 	s := []ecstypes.Service{
 		{
-			ServiceName:    aws.String("ci-cluster"),
+			ServiceName:    aws.String("test-cluster"),
 			Status:         aws.String("ACTIVE"),
 			Deployments:    d,
 			TaskDefinition: aws.String(testTDARN),
+			DesiredCount:   2,
 		},
 	}
 

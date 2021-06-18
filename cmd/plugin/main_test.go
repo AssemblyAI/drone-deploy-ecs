@@ -19,6 +19,7 @@ func TestCheckEnvVarsAllVarsSet(t *testing.T) {
 	os.Setenv("PLUGIN_CLUSTER", "some-cluster")
 	os.Setenv("PLUGIN_CONTAINER", "some-container-name")
 	os.Setenv("PLUGIN_IMAGE", "some/image:with-tag")
+	os.Setenv("PLUGIN_MODE", "rolling")
 
 	err := checkEnvVars()
 
