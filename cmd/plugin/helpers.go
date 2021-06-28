@@ -14,7 +14,6 @@ import (
 func checkEnvVars() error {
 	requiredVars := []string{
 		"PLUGIN_AWS_REGION",
-		"PLUGIN_SERVICE",
 		"PLUGIN_CLUSTER",
 		"PLUGIN_CONTAINER",
 		"PLUGIN_IMAGE",
