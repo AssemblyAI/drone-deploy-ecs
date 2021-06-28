@@ -287,6 +287,7 @@ func scaleDownInPercentages(dc deploy.DeployConfig, service string, serviceUsesA
 			log.Println("Error checking scale down status", err.Error())
 			return err
 		}
+		log.Println("Waiting 15 seconds for blue service to finish scaling down")
 		time.Sleep(15 * time.Second)
 	}
 
