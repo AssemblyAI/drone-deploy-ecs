@@ -18,6 +18,7 @@ const (
 
 type MockECSClient struct {
 	DeploymentState ecstypes.DeploymentRolloutState
+	FailedTasks     int32
 	TestingT        *testing.T
 	WantError       bool
 }
@@ -86,6 +87,7 @@ func (c MockECSClient) DescribeServices(ctx context.Context, params *ecs.Describ
 			Id:           aws.String("some-deployment-id"),
 			RolloutState: c.DeploymentState,
 			Status:       aws.String("PRIMARY"),
+			FailedTasks:  c.FailedTasks,
 		},
 	}
 
