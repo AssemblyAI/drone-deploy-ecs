@@ -12,13 +12,16 @@ const (
 	defaultMaxChecksUntilFailed = 60 // 10 second between checks + 60 checks = 600 seconds = 10 minutes
 )
 
+var (
+	disableRollbacks bool
+	maxDeployChecks  int
+)
+
 func main() {
 	// Ensure all required env vars are present
 	if err := checkEnvVars(); err != nil {
 		os.Exit(1)
 	}
-
-	var maxDeployChecks int
 
 	if os.Getenv("PLUGIN_MAX_DEPLOY_CHECKS") == "" {
 		log.Println("PLUGIN_MAX_DEPLOY_CHECKS environment variable not set. Defaulting to", defaultMaxChecksUntilFailed)
@@ -31,6 +34,15 @@ func main() {
 		} else {
 			maxDeployChecks = convertResult
 		}
+	}
+
+	// Set disable_rollbacks to any string in order to disable them
+	if os.Getenv("PLUGIN_DISABLE_ROLLBACKS") == "" {
+		log.Println("Rollbacks are enabled. Note: this setting only applies to rolling deployments")
+		disableRollbacks = false
+	} else {
+		log.Println("Rollbacks are disabled. Note: this setting only applies to rolling deployments")
+		disableRollbacks = true
 	}
 
 	dc := deploy.DeployConfig{
