@@ -95,13 +95,19 @@ func rolling(e types.ECSClient, cluster string, container string, image string, 
 	deploymentOK, _ := release(e, service, cluster, maxDeployChecks, *newTD.TaskDefinitionArn)
 
 	if !deploymentOK {
-		log.Println("Rolling back failed deployment")
-		rollbackOK, _ := release(e, service, cluster, maxDeployChecks, *currTD.TaskDefinitionArn)
 
-		if !rollbackOK {
-			log.Println("Error rolling back")
+		if disableRollbacks {
+			log.Println("Deployment failed but rollbacks are disabled. If the service has ECS Circuit Breaker enabled, the circuit breaker should handle rolling back.")
+			return errors.New("deploy failed")
+		} else {
+			log.Println("Rolling back failed deployment")
+			rollbackOK, _ := release(e, service, cluster, maxDeployChecks, *currTD.TaskDefinitionArn)
+
+			if !rollbackOK {
+				log.Println("Error rolling back")
+			}
+			return errors.New("deploy failed")
 		}
-		return errors.New("deploy failed")
 	}
 
 	log.Println("Deployment succeeded")

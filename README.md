@@ -60,6 +60,10 @@ steps:
     max_deploy_checks: 10
 ```
 
+#### Disabling rollbacks
+
+You can disable rollbacks by setting the `disable_rollbacks` to any string. Simply omit it to enable rollbacks. You may want to disable rollbacks if you have the ECS Circuit Breaker enabled for your service.
+
 ### Blue / Green
 
 Blue / Green deployments will work with services that use Application Autoscaling and those that do not.
@@ -70,6 +74,7 @@ It does not matter which service is set for `blue_service` or `green_service`. T
 
 Once the number of running containers equals the number of desired containers for the green service, the plugin will begin scaling down the blue service by  `scale_down_percent`. 
 
+Blue / Green deployments do not support disabling rollbacks.
 
 ```yml
 ---
@@ -113,4 +118,3 @@ steps:
 - Tests
 - Better, more consistent logging
 - Update `pkg/deploy` functions to use `deploy.DeployConfig`
-- Fix `scaleDownInPercentages()` bug
