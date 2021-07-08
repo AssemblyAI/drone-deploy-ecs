@@ -88,6 +88,11 @@ func CheckDeploymentStatus(ctx context.Context, c types.ECSClient, service strin
 		return true, err
 	}
 
+	if out.Services[0].Deployments[0].FailedTasks > 0 {
+		log.Printf("Deployment %d has failed tasks\n", out.Services[0].Deployments[0].FailedTasks)
+		return true, errors.New("deployment failed")
+	}
+
 	if out.Services[0].Deployments[0].RolloutState == "IN_PROGRESS" {
 		return false, nil
 	} else if out.Services[0].Deployments[0].RolloutState == "COMPLETED" {

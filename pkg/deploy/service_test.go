@@ -84,6 +84,22 @@ func TestCheckDeploymentStatus(t *testing.T) {
 			want:    true,
 			wantErr: true,
 		},
+		{
+			name: "test-failed-tasks",
+			args: args{
+				ctx: context.TODO(),
+				c: MockECSClient{
+					TestingT:        t,
+					DeploymentState: "IN_PROGRESS",
+					FailedTasks:     2,
+				},
+				service:      "test-service",
+				cluster:      "test-cluster",
+				deploymentID: "test-deployment-id",
+			},
+			want:    true,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
