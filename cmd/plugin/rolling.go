@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/assemblyai/drone-deploy-ecs/pkg/deploy"
@@ -67,49 +68,55 @@ func release(e types.ECSClient, service string, cluster string, maxDeployChecks 
 }
 
 func rolling(e types.ECSClient, cluster string, container string, image string, maxDeployChecks int) error {
-	service := os.Getenv("PLUGIN_SERVICE")
+	services := strings.Split(",", os.Getenv("PLUGIN_SERVICE"))
 
-	td, err := deploy.GetServiceRunningTaskDefinition(context.TODO(), e, service, cluster)
+	for _, service := range services {
+		log.Printf("Starting deployment for service '%s'\n", service)
 
-	if err != nil {
-		log.Println("Failing because of an error determining the currently in-use task definition")
-		return errors.New("deploy failed")
-	}
+		td, err := deploy.GetServiceRunningTaskDefinition(context.TODO(), e, service, cluster)
 
-	currTD, err := deploy.RetrieveTaskDefinition(context.TODO(), e, td)
-
-	if err != nil {
-		log.Println("Failing because of an error retrieving the currently in-use task definition")
-		return errors.New("deploy failed")
-	}
-
-	newTD, err := deploy.CreateNewTaskDefinitionRevision(context.TODO(), e, currTD, container, image)
-
-	if err != nil {
-		log.Println("Failing because of an error retrieving the creating a new task definition revision")
-		return errors.New("deploy failed")
-	}
-
-	log.Println("Created new task definition revision", newTD.Revision)
-
-	deploymentOK, _ := release(e, service, cluster, maxDeployChecks, *newTD.TaskDefinitionArn)
-
-	if !deploymentOK {
-
-		if disableRollbacks {
-			log.Println("Deployment failed but rollbacks are disabled. If the service has ECS Circuit Breaker enabled, the circuit breaker should handle rolling back.")
-			return errors.New("deploy failed")
-		} else {
-			log.Println("Rolling back failed deployment")
-			rollbackOK, _ := release(e, service, cluster, maxDeployChecks, *currTD.TaskDefinitionArn)
-
-			if !rollbackOK {
-				log.Println("Error rolling back")
-			}
+		if err != nil {
+			log.Println("Failing because of an error determining the currently in-use task definition")
 			return errors.New("deploy failed")
 		}
+
+		currTD, err := deploy.RetrieveTaskDefinition(context.TODO(), e, td)
+
+		if err != nil {
+			log.Println("Failing because of an error retrieving the currently in-use task definition")
+			return errors.New("deploy failed")
+		}
+
+		newTD, err := deploy.CreateNewTaskDefinitionRevision(context.TODO(), e, currTD, container, image)
+
+		if err != nil {
+			log.Println("Failing because of an error retrieving the creating a new task definition revision")
+			return errors.New("deploy failed")
+		}
+
+		log.Println("Created new task definition revision", newTD.Revision)
+
+		deploymentOK, _ := release(e, service, cluster, maxDeployChecks, *newTD.TaskDefinitionArn)
+
+		if !deploymentOK {
+
+			if disableRollbacks {
+				log.Println("Deployment failed but rollbacks are disabled. If the service has ECS Circuit Breaker enabled, the circuit breaker should handle rolling back.")
+				return errors.New("deploy failed")
+			} else {
+				log.Println("Rolling back failed deployment for service", service)
+				rollbackOK, _ := release(e, service, cluster, maxDeployChecks, *currTD.TaskDefinitionArn)
+
+				if !rollbackOK {
+					log.Println("Error rolling back")
+				}
+				return errors.New("deploy failed")
+			}
+		}
+
+		log.Printf("Deployment succeeded for service '%s'\n", service)
+
 	}
 
-	log.Println("Deployment succeeded")
 	return nil
 }
