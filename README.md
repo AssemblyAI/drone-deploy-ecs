@@ -60,6 +60,24 @@ steps:
     max_deploy_checks: 10
 ```
 
+You can deploy to multiple services in the same step by declaring a comma-separated list of `settings.service`. This is beneficial if you have multiple services using the same task definition.
+
+For example:
+
+```yml
+steps:
+- name: deploy
+  image: public.ecr.aws/assemblyai/drone-deploy-ecs
+  settings:
+    mode: rolling
+    aws_region: us-east-2
+    service: webapp,webapp-spot
+    cluster: dev-ecs-cluster
+    container: nginx
+    image: myorg/nginx-${DRONE_COMMIT_SHA}
+    max_deploy_checks: 10
+```
+
 #### Disabling rollbacks
 
 You can disable rollbacks by setting the `disable_rollbacks` to any string. Simply omit it to enable rollbacks. You may want to disable rollbacks if you have the ECS Circuit Breaker enabled for your service.
