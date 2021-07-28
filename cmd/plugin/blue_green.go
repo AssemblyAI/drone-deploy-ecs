@@ -212,15 +212,6 @@ func blueGreen(dc deploy.DeployConfig, maxDeployChecks int) error {
 	return err
 }
 
-/*
-There is a bug in this function. It effectively performs an exponential backoff.
-This is because it multiplies desiredCount * scalePercent, but it also calls itself recursively,
-so desiredCount gets smaller and smaller
-
-We should hold the initial desiredCount passed from blueGreen(), maybe in a global variable, then perform our logic on that number
-
-This bug doesn't really hurt anything, it just makes the scale down go slower than expected
-*/
 func scaleDownInPercentages(dc deploy.DeployConfig, service string, serviceUsesAppAutoscaling bool, scalePercent string, scaleDownInterval string, desiredCount int) error {
 	scalePercentString, err := strconv.Atoi(scalePercent)
 
