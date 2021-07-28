@@ -12,6 +12,10 @@ import (
 	"github.com/assemblyai/drone-deploy-ecs/pkg/types"
 )
 
+var (
+	initialDesiredCount int
+)
+
 // Returns blue service, green service, error
 func determineBlueGreen(e types.ECSClient, blueService string, greenService string, cluster string) (string, string, error) {
 
@@ -124,6 +128,7 @@ func blueGreen(dc deploy.DeployConfig, maxDeployChecks int) error {
 	dc.ScaleUp(currBlueDesiredCount, serviceMinCount, serviceMaxCount, determinedGreenService)
 
 	log.Println("Pausing for 45 seconds while ECS schedules", currBlueDesiredCount, "containers")
+	initialDesiredCount = int(currBlueDesiredCount)
 	time.Sleep(45 * time.Second)
 
 	// Start polling deployment
@@ -207,15 +212,6 @@ func blueGreen(dc deploy.DeployConfig, maxDeployChecks int) error {
 	return err
 }
 
-/*
-There is a bug in this function. It effectively performs an exponential backoff.
-This is because it multiplies desiredCount * scalePercent, but it also calls itself recursively,
-so desiredCount gets smaller and smaller
-
-We should hold the initial desiredCount passed from blueGreen(), maybe in a global variable, then perform our logic on that number
-
-This bug doesn't really hurt anything, it just makes the scale down go slower than expected
-*/
 func scaleDownInPercentages(dc deploy.DeployConfig, service string, serviceUsesAppAutoscaling bool, scalePercent string, scaleDownInterval string, desiredCount int) error {
 	scalePercentString, err := strconv.Atoi(scalePercent)
 
@@ -242,7 +238,7 @@ func scaleDownInPercentages(dc deploy.DeployConfig, service string, serviceUsesA
 	var newDesiredCount int32
 	var lastScaleDownEvent bool
 
-	scaleDownNumber := float64(desiredCount) * percent
+	scaleDownNumber := float64(initialDesiredCount) * percent
 
 	if scaleDownNumber < 0 {
 		scaleDownBy = 1
