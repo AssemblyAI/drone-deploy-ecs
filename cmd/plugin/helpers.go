@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
@@ -89,4 +90,9 @@ func newAppAutoscalingClient(region string) *applicationautoscaling.Client {
 	}
 
 	return applicationautoscaling.NewFromConfig(cfg)
+}
+
+func getServiceNames(s string) []string {
+
+	return strings.Split(s, ",")
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/assemblyai/drone-deploy-ecs/pkg/deploy"
@@ -68,7 +67,7 @@ func release(e types.ECSClient, service string, cluster string, maxDeployChecks 
 }
 
 func rolling(e types.ECSClient, cluster string, container string, image string, maxDeployChecks int) error {
-	services := strings.Split(",", os.Getenv("PLUGIN_SERVICE"))
+	services := getServiceNames(os.Getenv("PLUGIN_SERVICE"))
 
 	for _, service := range services {
 		log.Printf("Starting deployment for service '%s'\n", service)
