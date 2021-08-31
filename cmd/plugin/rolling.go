@@ -69,31 +69,34 @@ func release(e types.ECSClient, service string, cluster string, maxDeployChecks 
 func rolling(e types.ECSClient, cluster string, container string, image string, maxDeployChecks int) error {
 	services := getServiceNames(os.Getenv("PLUGIN_SERVICE"))
 
+	// Retrieve the task definition that the first service is using. The first service may be the only service
+	// In the event that len(services) > 1, we can reasonably assume that all services in the array use the same task definition
+	// That's the entire point of this feature
+	td, err := deploy.GetServiceRunningTaskDefinition(context.TODO(), e, services[0], cluster)
+
+	if err != nil {
+		log.Println("Failing because of an error determining the currently in-use task definition:", err.Error())
+		return errors.New("deploy failed")
+	}
+
+	currTD, err := deploy.RetrieveTaskDefinition(context.TODO(), e, td)
+
+	if err != nil {
+		log.Println("Failing because of an error retrieving the currently in-use task definition:", err.Error())
+		return errors.New("deploy failed")
+	}
+
+	newTD, err := deploy.CreateNewTaskDefinitionRevision(context.TODO(), e, currTD, container, image)
+
+	if err != nil {
+		log.Println("Failing because of an error retrieving the creating a new task definition revision:", err.Error())
+		return errors.New("deploy failed")
+	}
+
+	log.Println("Created new task definition revision", newTD.Revision)
+
 	for _, service := range services {
 		log.Printf("Starting deployment for service '%s'\n", service)
-
-		td, err := deploy.GetServiceRunningTaskDefinition(context.TODO(), e, service, cluster)
-
-		if err != nil {
-			log.Println("Failing because of an error determining the currently in-use task definition")
-			return errors.New("deploy failed")
-		}
-
-		currTD, err := deploy.RetrieveTaskDefinition(context.TODO(), e, td)
-
-		if err != nil {
-			log.Println("Failing because of an error retrieving the currently in-use task definition")
-			return errors.New("deploy failed")
-		}
-
-		newTD, err := deploy.CreateNewTaskDefinitionRevision(context.TODO(), e, currTD, container, image)
-
-		if err != nil {
-			log.Println("Failing because of an error retrieving the creating a new task definition revision")
-			return errors.New("deploy failed")
-		}
-
-		log.Println("Created new task definition revision", newTD.Revision)
 
 		deploymentOK, _ := release(e, service, cluster, maxDeployChecks, *newTD.TaskDefinitionArn)
 
