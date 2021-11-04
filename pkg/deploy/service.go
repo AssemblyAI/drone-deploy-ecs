@@ -90,6 +90,9 @@ func CheckDeploymentStatus(ctx context.Context, c types.ECSClient, service strin
 
 	if out.Services[0].Deployments[0].FailedTasks > 0 {
 		log.Printf("Deployment %d has failed tasks\n", out.Services[0].Deployments[0].FailedTasks)
+		// This is helpful for debugging
+		// ECS will clear all stopped tasks after a deployment finishes
+		showFailedTasks(c, service, cluster, deploymentID)
 		return true, errors.New("deployment failed")
 	}
 
@@ -100,6 +103,42 @@ func CheckDeploymentStatus(ctx context.Context, c types.ECSClient, service strin
 	} else {
 		// The only other status is FAILED
 		return true, errors.New("deployment failed")
+	}
+}
+
+func showFailedTasks(c types.ECSClient, service string, cluster string, deploymentID string) {
+	input := ecs.ListTasksInput{
+		Cluster:       &cluster,
+		DesiredStatus: "STOPPED",
+		StartedBy:     &deploymentID,
+		ServiceName:   &service,
+	}
+
+	resp, err := c.ListTasks(context.TODO(), &input)
+
+	if err != nil {
+		log.Printf("Error listing tasks: %s", err.Error())
+		return
+	}
+
+	tasks, err := c.DescribeTasks(
+		context.TODO(),
+		&ecs.DescribeTasksInput{
+			Tasks:   resp.TaskArns,
+			Cluster: &cluster,
+		},
+	)
+
+	if err != nil {
+		log.Printf("Error describing tasks: %s", err.Error())
+		return
+	}
+
+	for _, task := range tasks.Tasks {
+		stoppedReason := task.StoppedReason
+		taskARN := task.TaskArn
+
+		log.Printf("Task '%s' failure reason: %s", *taskARN, *stoppedReason)
 	}
 
 }

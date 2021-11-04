@@ -170,3 +170,32 @@ func (c MockECSClient) UpdateService(ctx context.Context, params *ecs.UpdateServ
 
 	return &out, nil
 }
+
+func (c MockECSClient) ListTasks(ctx context.Context, params *ecs.ListTasksInput, optFns ...func(*ecs.Options)) (*ecs.ListTasksOutput, error) {
+	output := &ecs.ListTasksOutput{
+		NextToken: aws.String("FOO"),
+		TaskArns: []string{
+			"arn-1",
+			"arn-2",
+		},
+	}
+
+	return output, nil
+}
+
+func (c MockECSClient) DescribeTasks(ctx context.Context, params *ecs.DescribeTasksInput, optFns ...func(*ecs.Options)) (*ecs.DescribeTasksOutput, error) {
+	output := &ecs.DescribeTasksOutput{
+		Tasks: []ecstypes.Task{
+			{
+				StoppedReason: aws.String("Error pulling image"),
+				TaskArn:       aws.String("arn-1"),
+			},
+			{
+				StoppedReason: aws.String("Essential container in task exited"),
+				TaskArn:       aws.String("arn-2"),
+			},
+		},
+	}
+
+	return output, nil
+}

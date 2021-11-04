@@ -246,3 +246,31 @@ func TestGetServiceDesiredCount(t *testing.T) {
 		})
 	}
 }
+
+func Test_showFailedTasks(t *testing.T) {
+	type args struct {
+		c            types.ECSClient
+		service      string
+		cluster      string
+		deploymentID string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "test-failed-task-logging",
+			args: args{
+				c:            MockECSClient{WantError: false, TestingT: t},
+				service:      "test-service",
+				cluster:      "test-cluster",
+				deploymentID: "ecs/deploy-foo",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			showFailedTasks(tt.args.c, tt.args.service, tt.args.cluster, tt.args.deploymentID)
+		})
+	}
+}
