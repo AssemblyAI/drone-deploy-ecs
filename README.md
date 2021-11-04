@@ -29,7 +29,9 @@ The ECS Service being deployed to must use the `ECS` deployment controller.
   - You might consider using tag-based access control if there are a lot of roles Drone must be able to pass
 - `ecs:DescribeTaskDefinition` on any task definitions this tool will modify
 - `ecs:DescribeServices` on any services this tool will modify
-- `ecs:UpdateService` on any services this tool will modify 
+- `ecs:UpdateService` on any services this tool will modify
+- `ecs:ListTasks` on `*`
+- `ecs:DescribeTasks` on `*`
 - `ecs:RegisterTaskDefinition` on `*`
 - `application-autoscaling:DescribeScalableTargets` on `*`
 - `application-autoscaling:RegisterScalableTarget` on `*` if you plan on using a blue/green deployment
