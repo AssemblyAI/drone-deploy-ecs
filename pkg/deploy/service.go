@@ -111,8 +111,9 @@ func showFailedTasks(c types.ECSClient, service string, cluster string, deployme
 		Cluster:       &cluster,
 		DesiredStatus: "STOPPED",
 		StartedBy:     &deploymentID,
-		ServiceName:   &service,
 	}
+
+	log.Printf("Checking failed tasks for service '%s'", service)
 
 	resp, err := c.ListTasks(context.TODO(), &input)
 
