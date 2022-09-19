@@ -84,6 +84,38 @@ steps:
 
 You can disable rollbacks by setting the `disable_rollbacks` to any string. Simply omit it to enable rollbacks. You may want to disable rollbacks if you have the ECS Circuit Breaker enabled for your service.
 
+### Blue / Green Cluster deploy
+
+This is very similar to the rolling deploy except it takes additional info to deploy to the inactive environment.
+Currently, how it pulls the live environment is somewhat hardcoded in the logic and by checking to see if the inactive
+environment has no tasks running. 
+
+```yaml
+---
+kind: pipeline
+name: deploy
+
+steps:
+- name: deploy
+  image: public.ecr.aws/assemblyai/drone-deploy-ecs
+  settings:
+    mode: rolling
+    aws_region: us-east-2
+    # the name of the secret tag that will store the live color
+    secret_service: secret
+    # The name of the ECS service
+    blue_service: webapp-blue
+    green_service: webapp-green
+    # The name of the ECS cluster that the service is in
+    cluster: dev-ecs-cluster
+    # The name of the container to update
+    container: nginx
+    # The images to deploy
+    blue_image: myorg/nginx-blue-${DRONE_COMMIT_SHA}
+    green_image: myorg/nginx-green-${DRONE_COMMIT_SHA}
+    max_deploy_checks: 10
+```
+
 ### Blue / Green
 
 Blue / Green deployments will work with services that use Application Autoscaling and those that do not.

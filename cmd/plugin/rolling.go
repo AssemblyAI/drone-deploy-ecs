@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"os"
 	"time"
 
 	"github.com/assemblyai/drone-deploy-ecs/pkg/deploy"
@@ -66,8 +65,8 @@ func release(e types.ECSClient, service string, cluster string, maxDeployChecks 
 	return true, nil
 }
 
-func rolling(e types.ECSClient, cluster string, container string, image string, maxDeployChecks int) error {
-	services := getServiceNames(os.Getenv("PLUGIN_SERVICE"))
+func rolling(e types.ECSClient, cluster string, container string, image string, maxDeployChecks int, service string) error {
+	services := getServiceNames(service)
 
 	// Retrieve the task definition that the first service is using. The first service may be the only service
 	// In the event that len(services) > 1, we can reasonably assume that all services in the array use the same task definition
