@@ -54,6 +54,7 @@ func main() {
 		Image:          os.Getenv("PLUGIN_IMAGE"),
 	}
 
+	// check which deployment method to use based on the mode, default to rolling
 	switch os.Getenv("PLUGIN_MODE") {
 	case "blue-green":
 		if err := checkBlueGreenVars(); err != nil {

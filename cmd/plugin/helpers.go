@@ -70,6 +70,7 @@ func checkBlueGreenVars() error {
 	return nil
 }
 
+// checkBlueGreenClusterVars validates that the settings in the drone file are correct
 func checkBlueGreenClusterVars() error {
 	requiredVars := []string{
 		"PLUGIN_BLUE_SERVICE",
@@ -133,6 +134,7 @@ func getServiceNames(s string) []string {
 	return strings.Split(s, ",")
 }
 
+// getGlobalInactiveEnvironment finds the appropriate global secret store that holds the current live color
 func getGlobalInactiveEnvironment(manager pluginTypes.SecretmanagerClient, branch string, service string) (string, error) {
 	var secretARN *string
 	params := &secretsmanager.ListSecretsInput{
