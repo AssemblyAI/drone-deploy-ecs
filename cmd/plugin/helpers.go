@@ -80,11 +80,17 @@ func checkBlueGreenClusterVars() error {
 		"PLUGIN_SECRET_SERVICE", // this is the service tag in terraform for the secret with the color
 	}
 
+	hasError := false
+
 	for _, v := range requiredVars {
 		if os.Getenv(v) == "" {
 			log.Printf("Required environment variable '%s' is missing\n", v)
-			return errors.New("env var not set")
+			hasError = true
 		}
+	}
+
+	if hasError {
+		return errors.New("env var not set")
 	}
 
 	return nil
