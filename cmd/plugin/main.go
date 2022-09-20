@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"strconv"
@@ -53,15 +54,56 @@ func main() {
 		Image:          os.Getenv("PLUGIN_IMAGE"),
 	}
 
-	if os.Getenv("PLUGIN_MODE") == "blue-green" {
+	// check which deployment method to use based on the mode, default to rolling
+	switch os.Getenv("PLUGIN_MODE") {
+	case "blue-green":
 		if err := checkBlueGreenVars(); err != nil {
 			os.Exit(1)
 		}
 		if err := blueGreen(dc, maxDeployChecks); err != nil {
 			os.Exit(1)
 		}
-	} else {
-		if err := rolling(dc.ECS, dc.Cluster, dc.Container, dc.Image, maxDeployChecks); err != nil {
+	case "blue-green-cluster":
+		// this is the same as rolling except that it deploys to the off color
+
+		if err := checkBlueGreenClusterVars(); err != nil {
+			os.Exit(1)
+		}
+
+		manager := newSecretsManagerClient(os.Getenv("PLUGIN_AWS_REGION"))
+		//get the inactive env. Either service name (blue/green) can be used since it does a partial match.
+		inactiveEnv, err := getGlobalInactiveEnvironment(manager, os.Getenv("DRONE_REPO_BRANCH"), os.Getenv("PLUGIN_SECRET_SERVICE"))
+
+		if err != nil {
+			log.Println(err)
+			os.Exit(1)
+		}
+
+		//pick the image/service to deploy to based of configured live env
+		image := os.Getenv("PLUGIN_BLUE_IMAGE")
+		service := os.Getenv("PLUGIN_BLUE_SERVICE")
+
+		if inactiveEnv == "green" {
+			image = os.Getenv("PLUGIN_GREEN_IMAGE")
+			service = os.Getenv("PLUGIN_GREEN_SERVICE")
+		}
+
+		count, err := deploy.GetServiceDesiredCount(context.Background(), dc.ECS, service, dc.Cluster)
+
+		if err != nil {
+			log.Printf("could not get desired count of service %s: %v\n", service, err)
+			os.Exit(1)
+		}
+
+		if count != 0 {
+			log.Printf("inactive environment for service %s has tasks running, this likely means we are attempting to deploy to the wrong env\n", service)
+		}
+
+		if err := rolling(dc.ECS, dc.Cluster, dc.Container, image, maxDeployChecks, service); err != nil {
+			os.Exit(1)
+		}
+	default:
+		if err := rolling(dc.ECS, dc.Cluster, dc.Container, dc.Image, maxDeployChecks, os.Getenv("PLUGIN_SERVICE")); err != nil {
 			os.Exit(1)
 		}
 	}
