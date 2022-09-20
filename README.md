@@ -99,7 +99,7 @@ steps:
 - name: deploy
   image: public.ecr.aws/assemblyai/drone-deploy-ecs
   settings:
-    mode: rolling
+    mode: blue-green-cluster
     aws_region: us-east-2
     # the name of the secret tag that will store the live color
     secret_service: secret
