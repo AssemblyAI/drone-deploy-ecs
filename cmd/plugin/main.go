@@ -103,6 +103,10 @@ func main() {
 			os.Exit(1)
 		}
 	default:
+		if err := checkRollingVars(); err != nil {
+			os.Exit(1)
+		}
+
 		if err := rolling(dc.ECS, dc.Cluster, dc.Container, dc.Image, maxDeployChecks, os.Getenv("PLUGIN_SERVICE")); err != nil {
 			os.Exit(1)
 		}
