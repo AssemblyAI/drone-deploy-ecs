@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 	"log"
 	"os"
 	"strings"
@@ -142,47 +141,16 @@ func getServiceNames(s string) []string {
 
 // getGlobalInactiveEnvironment finds the appropriate global secret store that holds the current live color
 func getGlobalInactiveEnvironment(manager pluginTypes.SecretmanagerClient, branch string, service string) (string, error) {
-	var secretARN *string
-	params := &secretsmanager.ListSecretsInput{
-		Filters: []types.Filter{
-			{
-				Key:    "tag-value",
-				Values: []string{service},
-			},
-		},
-	}
-
-	out, err := manager.ListSecrets(context.Background(), params)
-
-	if err != nil {
-		log.Printf("could not list secret: %v", err)
-		return "", err
-	}
-
 	environment := branch
 
 	if branch == "main" {
 		environment = "production"
 	}
 
-	// double check that we are matching the right environment and populate arn
-	for _, secretDef := range out.SecretList {
-		for _, tag := range secretDef.Tags {
-			if *tag.Key == "env" {
-				if *tag.Value == environment {
-					secretARN = secretDef.ARN
-					break
-				}
-			}
-		}
-	}
-
-	if secretARN == nil {
-		return "", errors.New("no secret arn found")
-	}
+	secretName := fmt.Sprintf("%s-rnnt-global", environment)
 
 	getParams := &secretsmanager.GetSecretValueInput{
-		SecretId: secretARN,
+		SecretId: &secretName,
 	}
 
 	getOut, err := manager.GetSecretValue(context.Background(), getParams)
