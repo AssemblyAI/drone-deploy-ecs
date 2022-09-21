@@ -157,7 +157,7 @@ func getGlobalInactiveEnvironment(manager pluginTypes.SecretmanagerClient, branc
 	getOut, err := manager.GetSecretValue(context.Background(), getParams)
 
 	if err != nil {
-		return "", fmt.Errorf("failed to retrieve secret value for live environment %v", err)
+		return "", fmt.Errorf("failed to retrieve secret value (name: %s) for live environment %v", secretName, err)
 	}
 
 	if getOut.SecretString == nil {
