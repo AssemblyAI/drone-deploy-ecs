@@ -27,7 +27,7 @@ func TestCheckEnvVarsAllVarsSet(t *testing.T) {
 }
 
 func TestCheckEnvVarsMissing(t *testing.T) {
-	os.Unsetenv("PLUGIN_IMAGE")
+	os.Unsetenv("PLUGIN_CLUSTER")
 
 	err := checkEnvVars()
 
