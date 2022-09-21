@@ -72,7 +72,7 @@ func main() {
 
 		manager := newSecretsManagerClient(os.Getenv("PLUGIN_AWS_REGION"))
 		//get the inactive env. Either service name (blue/green) can be used since it does a partial match.
-		inactiveEnv, err := getGlobalInactiveEnvironment(manager, os.Getenv("DRONE_REPO_BRANCH"), os.Getenv("PLUGIN_SECRET_SERVICE"))
+		inactiveEnv, err := getGlobalInactiveEnvironment(manager, os.Getenv("DRONE_COMMIT_BRANCH"), os.Getenv("PLUGIN_SECRET_SERVICE"))
 
 		if err != nil {
 			log.Println(err)
