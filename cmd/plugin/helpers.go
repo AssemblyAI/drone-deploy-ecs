@@ -140,14 +140,14 @@ func getServiceNames(s string) []string {
 }
 
 // getGlobalInactiveEnvironment finds the appropriate global secret store that holds the current live color
-func getGlobalInactiveEnvironment(manager pluginTypes.SecretmanagerClient, branch string, service string) (string, error) {
+func getGlobalInactiveEnvironment(manager pluginTypes.SecretmanagerClient, branch string, serviceSuffix string) (string, error) {
 	environment := branch
 
 	if branch == "main" {
 		environment = "production"
 	}
 
-	secretName := fmt.Sprintf("%s-rnnt-global", environment)
+	secretName := fmt.Sprintf("%s-%s", environment, serviceSuffix)
 
 	getParams := &secretsmanager.GetSecretValueInput{
 		SecretId: &secretName,
@@ -157,6 +157,10 @@ func getGlobalInactiveEnvironment(manager pluginTypes.SecretmanagerClient, branc
 
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve secret value for live environment %v", err)
+	}
+
+	if getOut.SecretString == nil {
+		return "", errors.New("no secret found")
 	}
 
 	secretString := *getOut.SecretString

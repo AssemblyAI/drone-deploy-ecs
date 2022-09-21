@@ -52,7 +52,7 @@ func Test_getGlobalInactiveEnvironment(t *testing.T) {
 	}{
 		{branch: "dev1", service: "rnnt-global", color: "green", err: nil},
 		{branch: "main", service: "rnnt-global", color: "blue", err: nil},
-		{branch: "arst", service: "rnnt-global", color: "blue", err: errors.New("no secret arn found")},
+		{branch: "arst", service: "rnnt-global", color: "blue", err: errors.New("no secret found")},
 	}
 	manager := &secretManagerMock{}
 
@@ -117,10 +117,14 @@ func (l *getSecretMock) GetSecretValue(ctx context.Context, params *secretsmanag
 	id := *params.SecretId
 	var secretString string
 
-	if id == "dev" {
+	if id == "dev1-rnnt-global" {
 		secretString = "{\"CURRENT_LIVE_ENVIRONMENT\": \"blue\"}"
-	} else if id == "production" {
+	} else if id == "production-rnnt-global" {
 		secretString = "{\"CURRENT_LIVE_ENVIRONMENT\": \"green\"}"
+	} else {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: nil,
+		}, nil
 	}
 
 	return &secretsmanager.GetSecretValueOutput{
