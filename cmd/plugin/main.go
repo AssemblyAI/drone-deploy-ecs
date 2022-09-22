@@ -97,6 +97,7 @@ func main() {
 
 		if count != 0 {
 			log.Printf("inactive environment for service %s has tasks running, this likely means we are attempting to deploy to the wrong env\n", service)
+			os.Exit(1)
 		}
 
 		if err := rolling(dc.ECS, dc.Cluster, dc.Container, image, maxDeployChecks, service); err != nil {
