@@ -72,7 +72,7 @@ func main() {
 
 		manager := newSecretsManagerClient(os.Getenv("PLUGIN_AWS_REGION"))
 		//get the inactive env. Either service name (blue/green) can be used since it does a partial match.
-		inactiveEnv, err := getGlobalInactiveEnvironment(manager, os.Getenv("DRONE_REPO_BRANCH"), os.Getenv("PLUGIN_SECRET_SERVICE"))
+		inactiveEnv, err := getGlobalInactiveEnvironment(manager, os.Getenv("DRONE_COMMIT_BRANCH"), os.Getenv("PLUGIN_SECRET_SERVICE"))
 
 		if err != nil {
 			log.Println(err)
@@ -97,12 +97,17 @@ func main() {
 
 		if count != 0 {
 			log.Printf("inactive environment for service %s has tasks running, this likely means we are attempting to deploy to the wrong env\n", service)
+			os.Exit(1)
 		}
 
 		if err := rolling(dc.ECS, dc.Cluster, dc.Container, image, maxDeployChecks, service); err != nil {
 			os.Exit(1)
 		}
 	default:
+		if err := checkRollingVars(); err != nil {
+			os.Exit(1)
+		}
+
 		if err := rolling(dc.ECS, dc.Cluster, dc.Container, dc.Image, maxDeployChecks, os.Getenv("PLUGIN_SERVICE")); err != nil {
 			os.Exit(1)
 		}

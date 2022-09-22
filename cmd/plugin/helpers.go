@@ -15,12 +15,12 @@ import (
 	"strings"
 )
 
+// checkEnvVars checks the vars needed for each mode
 func checkEnvVars() error {
 	requiredVars := []string{
 		"PLUGIN_AWS_REGION",
 		"PLUGIN_CLUSTER",
 		"PLUGIN_CONTAINER",
-		"PLUGIN_IMAGE",
 		"PLUGIN_MODE",
 	}
 
@@ -34,9 +34,10 @@ func checkEnvVars() error {
 	return nil
 }
 
-func parseRollingVars() error {
+func checkRollingVars() error {
 	requiredVars := []string{
 		"PLUGIN_SERVICE",
+		"PLUGIN_IMAGE",
 	}
 
 	for _, v := range requiredVars {
@@ -156,7 +157,7 @@ func getGlobalInactiveEnvironment(manager pluginTypes.SecretmanagerClient, branc
 	getOut, err := manager.GetSecretValue(context.Background(), getParams)
 
 	if err != nil {
-		return "", fmt.Errorf("failed to retrieve secret value for live environment %v", err)
+		return "", fmt.Errorf("failed to retrieve secret value (name: %s) for live environment %v", secretName, err)
 	}
 
 	if getOut.SecretString == nil {
