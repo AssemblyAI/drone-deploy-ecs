@@ -10,7 +10,7 @@ import (
 )
 
 func TestNewECSClient(t *testing.T) {
-	newECSClient("us-east-2")
+	newECSClient("us-east-2", "arn:aws:iam::123456789012:role/some-role")
 }
 
 func TestCheckEnvVarsAllVarsSet(t *testing.T) {

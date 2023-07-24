@@ -47,8 +47,8 @@ func main() {
 	}
 
 	dc := deploy.DeployConfig{
-		ECS:            newECSClient(os.Getenv("PLUGIN_AWS_REGION")),
-		AppAutoscaling: newAppAutoscalingClient(os.Getenv("PLUGIN_AWS_REGION")),
+		ECS:            newECSClient(os.Getenv("PLUGIN_AWS_REGION"), os.Getenv("PLUGIN_AWS_ROLE_ARN")),
+		AppAutoscaling: newAppAutoscalingClient(os.Getenv("PLUGIN_AWS_REGION"), os.Getenv("PLUGIN_AWS_ROLE_ARN")),
 		Cluster:        os.Getenv("PLUGIN_CLUSTER"),
 		Container:      os.Getenv("PLUGIN_CONTAINER"),
 		Image:          os.Getenv("PLUGIN_IMAGE"),
@@ -70,7 +70,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		manager := newSecretsManagerClient(os.Getenv("PLUGIN_AWS_REGION"))
+		manager := newSecretsManagerClient(os.Getenv("PLUGIN_AWS_REGION"), os.Getenv("PLUGIN_AWS_ROLE_ARN"))
 		//get the inactive env. Either service name (blue/green) can be used since it does a partial match.
 		inactiveEnv, err := getGlobalInactiveEnvironment(manager, os.Getenv("DRONE_COMMIT_BRANCH"), os.Getenv("PLUGIN_SECRET_SERVICE"))
 

@@ -6,10 +6,13 @@ import (
 	"errors"
 	"fmt"
 	pluginTypes "github.com/assemblyai/drone-deploy-ecs/pkg/types"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/applicationautoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"log"
 	"os"
 	"strings"
@@ -96,7 +99,7 @@ func checkBlueGreenClusterVars() error {
 	return nil
 }
 
-func newECSClient(region string) *ecs.Client {
+func newECSClient(region string, role_arn string) *ecs.Client {
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
 		config.WithRegion(region),
@@ -104,12 +107,19 @@ func newECSClient(region string) *ecs.Client {
 
 	if err != nil {
 		log.Fatalf("Failed to load SDK configuration, %v", err)
+	}
+
+	if role_arn != "" {
+		stsClient := sts.NewFromConfig(cfg)
+		provider := stscreds.NewAssumeRoleProvider(stsClient, role_arn)
+		cfg.Credentials = aws.NewCredentialsCache(provider)
+		cfg.Credentials.Retrieve(context.Background())
 	}
 
 	return ecs.NewFromConfig(cfg)
 }
 
-func newSecretsManagerClient(region string) *secretsmanager.Client {
+func newSecretsManagerClient(region string, role_arn string) *secretsmanager.Client {
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
 		config.WithRegion(region),
@@ -119,10 +129,17 @@ func newSecretsManagerClient(region string) *secretsmanager.Client {
 		log.Fatalf("Failed to load SDK configuration, %v", err)
 	}
 
+	if role_arn != "" {
+		stsClient := sts.NewFromConfig(cfg)
+		provider := stscreds.NewAssumeRoleProvider(stsClient, role_arn)
+		cfg.Credentials = aws.NewCredentialsCache(provider)
+		cfg.Credentials.Retrieve(context.Background())
+	}
+
 	return secretsmanager.NewFromConfig(cfg)
 }
 
-func newAppAutoscalingClient(region string) *applicationautoscaling.Client {
+func newAppAutoscalingClient(region string, role_arn string) *applicationautoscaling.Client {
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
 		config.WithRegion(region),
@@ -130,6 +147,13 @@ func newAppAutoscalingClient(region string) *applicationautoscaling.Client {
 
 	if err != nil {
 		log.Fatalf("Failed to load SDK configuration, %v", err)
+	}
+
+	if role_arn != "" {
+		stsClient := sts.NewFromConfig(cfg)
+		provider := stscreds.NewAssumeRoleProvider(stsClient, role_arn)
+		cfg.Credentials = aws.NewCredentialsCache(provider)
+		cfg.Credentials.Retrieve(context.Background())
 	}
 
 	return applicationautoscaling.NewFromConfig(cfg)
