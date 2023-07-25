@@ -18,8 +18,8 @@ github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.29 h1:yOpYx+FTBdpk/g+sBU
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.29/go.mod h1:M/eUABlDbw2uVrdAn+UsI6M727qp2fxkp8K0ejcBDUY=
 github.com/aws/aws-sdk-go-v2/internal/ini v1.2.3 h1:NnXJXUz7oihrSlPKEM0yZ19b+7GQ47MX/LluLlEyE/Y=
 github.com/aws/aws-sdk-go-v2/internal/ini v1.2.3/go.mod h1:EES9ToeC3h063zCFDdqWGnARExNdULPaBvARm1FLwxA=
-github.com/aws/aws-sdk-go-v2/service/applicationautoscaling v1.6.1 h1:GB8NwoL/ok9BnWs96YuL99juFSitccuL+wcxwXZJ4Z4=
-github.com/aws/aws-sdk-go-v2/service/applicationautoscaling v1.6.1/go.mod h1:5sbCQcg+GEk0yy4RuvqqKhnZqpwvwSADS9hcJn1Qnkg=
+github.com/aws/aws-sdk-go-v2/service/applicationautoscaling v1.21.3 h1:WtGKwrKlFfsSbWUzu7c0lU2gGWF1VIrxFs5l3MsEG10=
+github.com/aws/aws-sdk-go-v2/service/applicationautoscaling v1.21.3/go.mod h1:ScZxu5HkhJX/1JYLO/lI3j+E2WdcedME8Gyv0+rQguE=
 github.com/aws/aws-sdk-go-v2/service/ecs v1.9.1 h1:hWoNQzYRnxINr3jGqSwvi2T1H7fan8lbjo5A89I+ktE=
 github.com/aws/aws-sdk-go-v2/service/ecs v1.9.1/go.mod h1:kDzqpv7HB2VgFXMlVBszF6ZCLkac6EmYjd9v5SyJcdI=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.3.1/go.mod h1:Ve+eJOx9UWaT/lMVebnFhDhO49fSLVedHoA82+Rqme0=
